@@ -20,6 +20,7 @@ var productPriceStock = [];
 var userProdSelect = "";
 var userNumSelect = "";
 var availProds = "";
+var customerPrice = 0;
 
 // connect to the database
 connection.connect(function(err) {
@@ -33,6 +34,7 @@ var letsgo = function() {
   displayTable = [];  // global variable to hold db contents to be displayed
   availableProducts = [];
   productPriceStock = [];
+  customerPrice = 0;
 
   connection.query('SELECT * FROM products', function(err, dbContent) {
     if (err) {
@@ -106,7 +108,19 @@ var letsgo = function() {
             letsgo();
           } else if (availProds >= userNumSelect) {
             availProds -= userNumSelect;  // reduce available stock
-            console.log("Quantity Available = " + availProds);
+            // console.log("Quantity Available = " + availProds);
+	        var query = "SELECT price FROM products WHERE ?";
+	        connection.query(query, {product_name:userProdSelect}, function(err, prodPrice){
+	          if (err) {
+	            console.log("error in getting product Price");
+	            throw err;
+	          } else {
+	          	// console.log(prodPrice);
+	          	// console.log(prodPrice[0].price);
+	          	customerPrice = parseFloat(prodPrice[0].price) * userNumSelect;
+	            console.log("You bought " + userNumSelect + " " + userProdSelect + " for $ " + customerPrice);
+	          }
+	        });  // get product price from DB
             var query = "UPDATE products SET stock_quantity = ? WHERE product_name = ?";
             connection.query(query, [availProds, userProdSelect], function(err, result) {
               if (err) {
@@ -135,65 +149,68 @@ var pushIntoPriceArray = function(priceObject) {
 }
 
 
-var checkWhatAndHowMany = function() {
+// var checkWhatAndHowMany = function() {
 
-  inquirer.prompt([
-    {
-      name: "itemToBeBought",
-      type: "rawlist",
-      message: "What would you like to buy?",
-      choices: availableProducts
-    }
-  ]).then(function(userProd){
-    userProdSelect = userProd;
-    inquirer.prompt({
-      name:"quantityToBeBought",
-      message:"How many would you like to buy?",
-      validate: function(value) {
-        if( (isNan(value) === false) && (parseInt(value) > 0) ) {
-          return true;
-        }
-        return false;
-      }
-    }).then(function(userQuant){
-      var query = "SELECT stock_quantity from products WHERE ?";
-      connection.query(query, {product_name:userProdSelect}, function(err, availNumber){
-        if (err) throw err;
-        if(availNumber < userQuant) {
-          console.log("Insufficient Quantity");
-          connection.end();
-        } else {
-          availNumber -= userQuant;  // reduce available stock
-          var query = "UPDATE products SET stock_quantity = ? WHERE product_name = ?";
-          connection.query(query, [availNumber, userProdSelect], function(err, result) {
-            if (err) throw err;
-          });
-        }
-      });
-    });
-  });
-  checkWhatAndHowMany();
-}
+//   inquirer.prompt([
+//     {
+//       name: "itemToBeBought",
+//       type: "rawlist",
+//       message: "What would you like to buy?",
+//       choices: availableProducts
+//     }
+//   ]).then(function(userProd){
+//     userProdSelect = userProd;
+//     inquirer.prompt({
+//       name:"quantityToBeBought",
+//       message:"How many would you like to buy?",
+//       validate: function(value) {
+//         if( (isNan(value) === false) && (parseInt(value) > 0) ) {
+//           return true;
+//         }
+//         return false;
+//       }
+//     }).then(function(userQuant){
+//       var query = "SELECT stock_quantity from products WHERE ?";
+//       connection.query(query, {product_name:userProdSelect}, function(err, availNumber){
+//         if (err) throw err;
+//         if(availNumber < userQuant) {
+//           console.log("Insufficient Quantity \n");
+//           connection.end();
+//         } else {
+//           availNumber -= userQuant;  // reduce available stock
+//           var query = "UPDATE products SET stock_quantity = ? WHERE product_name = ?";
+//           connection.query(query, [availNumber, userProdSelect], function(err, result) {
+//             if (err) throw err;
+//           });
+//         }
+//       });
+//     });
+//   });
+//   checkWhatAndHowMany();
+// }
 
-var isThereEnough = function (prod, quant) {
-  var query = "SELECT stock_quantity FROM products WHERE ?";
-  connection.query(query, {product_name:prod}, function(err, stockAvail){
-    if (err) throw err;
-    if (parseInt(quant) > parseInt(stockAvail)) {
-      console.log("Not enough available for you to buy today!  Please select another product or quantity!");
-      return (false);
-    } else {
-      var remainQuant = parseInt(stockAvail) - parseInt(quant);
-      query = "UPDATE products SET stock_quantity = ? WHERE product_name = ?";
-      updateDataBase(query, remainQuant, prod);
-      console.log("database updated");
-      return(true);
-    }
-  });
-}
+// var isThereEnough = function (prod, quant) {
+//   var query = "SELECT stock_quantity FROM products WHERE ?";
+//   connection.query(query, {product_name:prod}, function(err, stockAvail){
+//     if (err) throw err;
+//     if (parseInt(quant) > parseInt(stockAvail)) {
+//       console.log("Not enough available for you to buy today!  Please select another product or quantity!\n");
+//       return (false);
+//     } else {
+//       var remainQuant = parseInt(stockAvail) - parseInt(quant);
+//       query = "UPDATE products SET stock_quantity = ? WHERE product_name = ?";
+//       updateDataBase(query, remainQuant, prod);
+//       return(true);
+//     }
+//   });
+// }
 
-var updateDataBase = function (queryString, remain, productName) {
-  connection.query(queryString, [remain, productName], function(err, result){
-    if (err) throw err;
-  });
-}
+// var updateDataBase = function (queryString, remain, productName) {
+//   connection.query(queryString, [remain, productName], function(err, result){
+//     if (err) {
+//     	throw err;
+//     } else {
+//     	console.log("database updated \n");
+//     }
+//   });
+// }
