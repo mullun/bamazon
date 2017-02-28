@@ -143,9 +143,62 @@ var letsgo = function() {
         }
       });
     } else if (managerChoice === "Add New Product") {
-
-    }else {
-      // do default work
+      connection.query('SELECT * FROM products', function(err, dbContent) {
+        if (err) {
+          console.log("error reading from db");
+          return;
+        } else {
+          console.table(dbContent);  // display available products
+          inquirer.prompt([
+            {
+              name: "nameItemToBeAdded",
+              message: "Name of Product to be added: ",
+              validate: function(value) {
+                if (value != "") {
+                  return true;
+                } else {
+                  return false;
+                }
+              }
+            },
+            {
+              name: "idItemToBeAdded",
+              message: "ID of Product to be added: "
+            },
+            {
+              name: "priceItemToBeAdded",
+              message: "Price of Item to be added: "
+            },
+            {
+              name: "quantityItemToBeAdded",
+              message: "Stock of Item to be added: "
+            },
+            {
+              name: "departmentItemToBeAdded",
+              message: "Department Name for Item to be added: "
+            }
+          ]). then(function(answers) {
+            var itemName = answers.nameItemToBeAdded;
+            var itemId = answers.idItemToBeAdded;
+            var itemPrice = answers.priceItemToBeAdded;
+            var itemQuantity = answers.quantityItemToBeAdded;
+            var itemDepartment = answers.departmentItemToBeAdded;
+            var query = "INSERT INTO products (item_id, product_name, department_name, price, stock_quantity) VALUES (?, ?, ?, ?, ?)";
+            connection.query(query, [itemId, itemName, itemDepartment, itemPrice, itemQuantity], function(err, result){
+              if (err) {
+                console.log("error adding row to table");
+                return;
+              } else {
+                letsgo();
+              }
+            })
+          })
+        }
+      });  // if manager selects view
+    } 
+    else {
+      console.log("why am i here?")  // do default work
+      letsgo();
     }
   });
 } 
@@ -153,125 +206,3 @@ var letsgo = function() {
 var pushIntoProdArray = function(prodName) {
   availableProducts.push(prodName);
 }
-
-//     inquirer.prompt({
-//       name:"quantityToBeBought",
-//       message:"How many would you like to buy?",
-//       validate: function(value) {
-//         if( (isNaN(value) === false) && (parseInt(value) > 0) ) {
-//           return true;
-//         }
-//         return false;
-//       }
-//     }).then(function(userQuant){
-
-
-
-//   connection.query('SELECT * FROM products', function(err, dbContent) {
-//     if (err) {
-//       console.log("error reading from db");
-//       return;
-//     }
-//     console.log("Here are things to sell");
-//     for (i = 0; i < dbContent.length; i ++) {
-//       var tempObject = {
-//         id:"",
-//         name:"",
-//         price:""
-//       };
-//       var tempNamePriceQuant = {
-//         name:"",
-//         price:"",
-//         stock: ""
-//       };
-//       tempObject.id = dbContent[i].item_id;
-//       tempObject.name = dbContent[i].product_name;
-//       tempObject.price = dbContent[i].price;
-
-//       tempNamePriceQuant.name = dbContent[i].product_name;
-//       tempNamePriceQuant.price = dbContent[i].price;
-//       tempNamePriceQuant.stock = dbContent[i].stock_quantity;
-
-//       pushIntoArray(tempObject);
-
-
-//       pushIntoPriceArray(tempNamePriceQuant);
-//     }
-//     // display available material to customer
-//     // console.log("displaying available material");
-//     console.table(displayTable);
-//     // console.log("\n");
-//     // console.table(availableProducts);
-//     // console.table(productPriceStock);
-//     inquirer.prompt([
-//       {
-//         name: "itemToBeBought",
-//         type: "rawlist",
-//         message: "What would you like to buy?",
-//         choices: availableProducts
-//       }
-//     ]).then(function(userProd){
-//       userProdSelect = userProd.itemToBeBought;
-//       inquirer.prompt({
-//         name:"quantityToBeBought",
-//         message:"How many would you like to buy?",
-//         validate: function(value) {
-//           if( (isNaN(value) === false) && (parseInt(value) > 0) ) {
-//             return true;
-//           }
-//           return false;
-//         }
-//       }).then(function(userQuant){
-//         userNumSelect = parseInt(userQuant.quantityToBeBought);
-//         console.log("Product user wants = " + userProdSelect);
-//         console.log("Number of prod user wants = " + userNumSelect);
-//         var query = "SELECT stock_quantity FROM products WHERE ?";
-//         connection.query(query, {product_name:userProdSelect}, function(err, availNumber){
-//           if (err) {
-//             console.log("error in getting availNumber");
-//             throw err;
-//           }
-//           availProds = parseInt(availNumber[0].stock_quantity);
-//           if(availProds < userNumSelect) {
-//             console.log("Insufficient Quantity");
-//           	console.log("Quantity Available = " + availProds);
-//             letsgo();
-//           } else if (availProds >= userNumSelect) {
-//             availProds -= userNumSelect;  // reduce available stock
-//             // console.log("Quantity Available = " + availProds);
-// 	        var query = "SELECT price FROM products WHERE ?";
-// 	        connection.query(query, {product_name:userProdSelect}, function(err, prodPrice){
-// 	          if (err) {
-// 	            console.log("error in getting product Price");
-// 	            throw err;
-// 	          } else {
-// 	          	// console.log(prodPrice);
-// 	          	// console.log(prodPrice[0].price);
-// 	          	customerPrice = parseFloat(prodPrice[0].price) * userNumSelect;
-// 	            console.log("You bought " + userNumSelect + " " + userProdSelect + " for $ " + customerPrice);
-// 	          }
-// 	        });  // get product price from DB
-//             var query = "UPDATE products SET stock_quantity = ? WHERE product_name = ?";
-//             connection.query(query, [availProds, userProdSelect], function(err, result) {
-//               if (err) {
-//                 console.log("error updating database");
-//                 throw err;
-//               }
-//               letsgo();
-//             });
-//           }
-//         });
-//       }); // after receiving # desired by user
-//     });  // after receiving product desired by user
-//   });  // after very first connection request for db contents
-// }
-
-// var pushIntoArray = function(dbObject) {
-//   displayTable.push(dbObject);
-// }
-
-
-
-// var pushIntoPriceArray = function(priceObject) {
-//   productPriceStock.push(priceObject);
-// }
