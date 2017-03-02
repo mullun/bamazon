@@ -119,6 +119,15 @@ var letsgo = function() {
 	          	// console.log(prodPrice[0].price);
 	          	customerPrice = parseFloat(prodPrice[0].price) * userNumSelect;
 	            console.log("You bought " + userNumSelect + " " + userProdSelect + " for $ " + customerPrice);
+	            var query = "SELECT product_sales FROM products WHERE ?";
+	            connection.query(query, {product_name:userProdSelect}, function(err, result) {
+	            	  if(err) {
+	            	  	console.log("error getting total sales");
+	            	  	return;
+	            	  } else {
+	            	  	result = parseInt(result) + customerPrice;
+	            	  }
+	            })
 	          }
 	        });  // get product price from DB
             var query = "UPDATE products SET stock_quantity = ? WHERE product_name = ?";
